@@ -56,9 +56,7 @@ class Player(Sprite):
         self._layer = Layer.ENTITY
         self.groups = game.all_sprites
         super().__init__(self.groups)
-        self.spritesheet = load_player_sprites(
-            path.join(img_dir, "spritesheet.png")
-        )
+        self.spritesheet = load_player_sprites(path.join(img_dir, "spritesheet.png"))
         self.walking = False
         self.jumping = False
         self.standing_frame = 0
@@ -133,9 +131,7 @@ class Cloud(Sprite):
         self.image = self.game.cloud_sprites[random.randrange(0, 3)]
         self.rect = self.image.get_rect()
         scale = random.randrange(50, 101) / 100
-        self.image = pg.transform.scale(
-            self.image, (int(self.rect.width * scale), int(self.rect.height * scale))
-        )
+        self.image = pg.transform.scale(self.image, (int(self.rect.width * scale), int(self.rect.height * scale)))
         self.rect.x = random.randrange(0, WIDTH - self.rect.width)
         self.rect.y = random.randrange(-500, -50)
 
@@ -179,9 +175,7 @@ class PowerUp(Sprite):
         self.game = game
         self.platform = platform
         self.type = "boost"
-        self.image = pg.transform.scale(
-            pg.image.load(path.join(img_dir, "boost.png")), (40, 40)
-        )
+        self.image = pg.transform.scale(pg.image.load(path.join(img_dir, "boost.png")), (40, 40))
         self.rect = self.image.get_rect()
         self.rect.centerx = self.platform.rect.centerx
         self.rect.bottom = self.platform.rect.top - 5
@@ -200,9 +194,7 @@ class Coin(Sprite):
         self.game = game
         self.platform = platform
         self.type = "coin"
-        self.image = pg.transform.scale(
-            pg.image.load(path.join(img_dir, "coin.png")), (40, 40)
-        )
+        self.image = pg.transform.scale(pg.image.load(path.join(img_dir, "coin.png")), (40, 40))
         self.rect = self.image.get_rect()
         self.rect.centerx = self.platform.rect.centerx
         self.rect.bottom = self.platform.rect.top - 5
@@ -222,12 +214,8 @@ class FlyingMob(Sprite):
         self.now = 0
         self.last_update = 0
         self.current_frame = 0
-        self.image_idle_frame_1 = pg.transform.scale(
-            pg.image.load(path.join(img_dir, "idle-frame-1.png")), (40, 40)
-        )
-        self.image_idle_frame_2 = pg.transform.scale(
-            pg.image.load(path.join(img_dir, "idle-frame-2.png")), (40, 40)
-        )
+        self.image_idle_frame_1 = pg.transform.scale(pg.image.load(path.join(img_dir, "idle-frame-1.png")), (40, 40))
+        self.image_idle_frame_2 = pg.transform.scale(pg.image.load(path.join(img_dir, "idle-frame-2.png")), (40, 40))
         self.idle_frames = [self.image_idle_frame_1, self.image_idle_frame_2]
         self.image = self.image_idle_frame_1
         self.rect = self.image.get_rect()
@@ -245,13 +233,9 @@ class FlyingMob(Sprite):
             self.last_update = self.now
             self.current_frame = (self.current_frame + 1) % 2
             if self.velocityX < 0:
-                self.image = pg.transform.flip(
-                    self.idle_frames[self.current_frame], False, False
-                )
+                self.image = pg.transform.flip(self.idle_frames[self.current_frame], False, False)
             elif self.velocityY < 0:
-                self.image = pg.transform.flip(
-                    self.idle_frames[self.current_frame], True, False
-                )
+                self.image = pg.transform.flip(self.idle_frames[self.current_frame], True, False)
 
         self.rect.x += self.velocityX
         self.velocityY += self.dy

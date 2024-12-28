@@ -1,9 +1,12 @@
 [project]
 name = "alien-jump"
 version = "0.1.0"
-description = "Add your description here"
+description = "2D doodle jump style platformer"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "pygame>=2.6.1",
 ]
+
+[tool.ruff]
+line-length = 180

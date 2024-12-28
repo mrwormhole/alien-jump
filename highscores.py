@@ -1,6 +1,7 @@
 import sqlite3
 from typing import Tuple, Optional
 
+
 class HighscoreDB:
     def __init__(self, db_name: str = "highscore.db"):
         self.db_conn: Optional[sqlite3.Connection] = None
@@ -18,12 +19,12 @@ class HighscoreDB:
 
     def create_table(self) -> None:
         try:
-            self.cursor.execute('''
+            self.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS highscores (
                     name TEXT NOT NULL,
                     score INTEGER NOT NULL
                 );
-            ''')
+            """)
             self.db_conn.commit()
         except sqlite3.Error as e:
             print(f"Error creating highscores table: {e}")
