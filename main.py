@@ -1,76 +1,65 @@
-# Platformer Game
-# @author F.Talha Altınel
-
 import pygame as pg
 import random
 from os import path
 
+from highscores import HighscoreDB
 from settings import *
-from sprites import *
-from cosmosTest import *
+from sprites import Player, Platform, Cloud, InputBox, FlyingMob, load_cloud_sprites
 
+mixer = pg.mixer
+display = pg.display
+img_dir = path.join(path.dirname(__file__), "img")
+sound_dir = path.join(path.dirname(__file__), "sound")
 
 class Game:
     def __init__(self):
         pg.init()
-        pg.mixer.init()
-        self.screen = pg.display.set_mode((WIDTH,HEIGHT))
-        pg.display.set_caption(TITLE)
+        self.screen = display.set_mode((WIDTH,HEIGHT))
+        display.set_caption(TITLE)
         self.clock = pg.time.Clock()
-        self.font_name = pg.font.match_font(FONT_NAME)
+        self.font = pg.font.match_font(FONT)
         self.running = True
-        self.load_data()
 
-    def load_data(self):
-        self.azure = AzureIsTheBest()
-        self.dir = path.dirname(__file__)
-        self.img_dir = path.join(self.dir, 'img')
-        self.sound_dir = path.join(self.dir, 'sound')
-        with open(path.join(self.dir, HIGHSCORE_FILE), 'r+') as f:
-            try:
-                self.highscore = int(f.read())
-            except:
-                self.highscore = 0
-                print("console error")
-        self.spritesheet = Spritesheet(path.join(self.img_dir,SPRITESHEET))
-        self.cloud_sprites = self.spritesheet.get_cloud_sprites(self.img_dir)
-        self.jump_sound = pg.mixer.Sound(path.join(self.sound_dir,JUMP_SOUND))
+        self.db = HighscoreDB()
+        (name, highscore) = self.db.highest_score()
+        self.name = name
+        self.highscore = highscore
 
-    def new(self):
+        self.cloud_sprites = load_cloud_sprites(img_dir)
+        self.jump_sound = mixer.Sound(path.join(sound_dir,JUMP_SOUND))
         self.all_sprites = pg.sprite.LayeredUpdates()
         self.all_platforms = pg.sprite.Group()
         self.all_powerups = pg.sprite.Group()
         self.all_mobs = pg.sprite.Group()
         self.all_clouds = pg.sprite.Group()
-        self.player = Player(self.spritesheet,self)
+        self.player = Player(self)
         self.score = 0
         self.mob_timer = 0
-        self.input_box = InputBox(WIDTH/2 - 100, HEIGHT * 3 / 4, 140, 32,self.screen)
+        self.input_box = InputBox(WIDTH / 2 - 100, HEIGHT * 3 / 4, 140, 32, self.screen, "enter your name")
 
         for platform in PLATFORM_LIST:
-            Platform(self,platform[0],platform[1], path.join(self.img_dir,GRASS_TILE),path.join(self.img_dir,STONE_TILE),self.player.now)
+            Platform(self, platform[0], platform[1], path.join(img_dir, GRASS_TILE), path.join(img_dir, STONE_TILE))
 
-        pg.mixer.music.load(path.join(self.sound_dir, THEME_MUSIC))
+        mixer.music.load(path.join(sound_dir, THEME_MUSIC))
 
         for i in range(8):
             c = Cloud(self)
             c.rect.y += 500
-        self.run()
 
     def run(self):
         self.playing = True
-        pg.mixer.music.play(loops=-1)
+        mixer.music.play(loops=-1)
         while self.playing:
             self.clock.tick(FPS)
             self.events()
             self.update()
             self.draw()
-        pg.mixer.stop()
+        mixer.stop()
 
     def events(self):
         for event in pg.event.get():
-            if event.type == pg.QUIT:
-                if self.playing == True:
+            if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
+                if self.playing:
                     self.playing = False
                 self.running = False
             if event.type == pg.KEYDOWN:
@@ -86,7 +75,6 @@ class Game:
 
     def update(self):
         self.all_sprites.update()
-        # print(int(self.clock.get_fps()))
 
         # spawning a mob
         now = pg.time.get_ticks()
@@ -109,7 +97,7 @@ class Game:
                 for hit in hits:
                     if hit.rect.bottom > lowest.rect.bottom:
                         lowest = hit
-                if self.player.pos.x < lowest.rect.right + 10 and self.player.pos.x > lowest.rect.left - 10:
+                if lowest.rect.right + 10 > self.player.pos.x > lowest.rect.left - 10:
                     if self.player.pos.y < lowest.rect.centery:
                         self.player.pos.y = lowest.rect.top + 1
                         self.player.vel.y = 0
@@ -150,17 +138,17 @@ class Game:
         # spawning new platforms
         while len(self.all_platforms) < 7:
             Platform(self,random.randrange(0, WIDTH-random.randrange(50,100)),
-                         random.randrange(-75, -30),
-                        path.join(self.img_dir,GRASS_TILE),path.join(self.img_dir,STONE_TILE),self.player.now)
+                     random.randrange(-75, -30),
+                     path.join(img_dir,GRASS_TILE),path.join(img_dir,STONE_TILE))
 
     def draw(self):
         self.screen.fill(GREY)
         self.all_sprites.draw(self.screen)
         self.draw_text(str(self.score), WIDTH/2, 5, 30, YELLOW)
-        pg.display.flip()
+        display.flip()
 
     def draw_text(self, text, x, y, size, color):
-        font = pg.font.Font(self.font_name, size)
+        font = pg.font.Font(self.font, size)
         text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
         text_rect.midtop = (x, y)
@@ -189,14 +177,15 @@ class Game:
                     waiting = False
 
     def show_start_screen(self):
-        pg.mixer.music.load(path.join(self.sound_dir, MENU_MUSIC))
-        pg.mixer.music.play(loops=-1)
+        mixer.music.load(path.join(sound_dir, MENU_MUSIC))
+        mixer.music.play(loops=-1)
         self.screen.fill(GREY)
         self.draw_text(TITLE, WIDTH/2, HEIGHT/4, 48, WHITE)
-        self.draw_text("A and D to move, Space to jump", WIDTH/2, HEIGHT/2, 22, WHITE)
+        self.draw_text("[A] and [D] to move, [SPACE] to jump", WIDTH/2, HEIGHT/2, 22, WHITE)
         self.draw_text("Press any key to play", WIDTH / 2, HEIGHT * 3 / 4, 22, WHITE)
-        self.draw_text("Highscore: " + str(self.highscore), WIDTH / 2, 15, 22, BLACK)
-        pg.display.flip()
+        if self.name and self.highscore:
+            self.draw_text(f"Highscore | {self.name}:{self.highscore}", WIDTH / 2, 15, 22, BLACK)
+        display.flip()
         self.wait_for_any_key()
 
     def show_game_over_screen(self):
@@ -207,40 +196,38 @@ class Game:
             self.highscore = self.score
             self.draw_text("NEW HIGHSCORE!", WIDTH/2, HEIGHT/2 + 40, 22, BLACK)
             self.time_to_submit_to_the_database = True
-            with open(path.join(self.dir, HIGHSCORE_FILE), 'r+') as f:
-                f.write(str(self.highscore))
         else:
             self.time_to_submit_to_the_database = False
             self.draw_text("Highscore: " + str(self.highscore), WIDTH / 2, HEIGHT/2 + 40, 22, BLACK)
         self.draw_text("GAME OVER", WIDTH / 2, HEIGHT / 4, 48, WHITE)
         self.draw_text("Score: " + str(self.score), WIDTH / 2, HEIGHT / 2, 22, WHITE)
-        pg.display.flip()
+        display.flip()
 
         if not self.time_to_submit_to_the_database:
             self.draw_text("Press any key to play again", WIDTH / 2, HEIGHT * 3 / 4, 22, WHITE)
-            pg.display.flip()
+            display.flip()
             self.wait_for_any_key()
 
         while self.time_to_submit_to_the_database:
             self.screen.fill(GREY)
             self.draw_text("NEW HIGHSCORE!", WIDTH / 2, HEIGHT / 2 + 40, 22, BLACK)
             self.draw_text("Enter your name to submit to the database", WIDTH / 2, HEIGHT / 2 + 100, 22, BLACK)
-            self.draw_text("GAME OVER", WIDTH / 2, HEIGHT / 4, 48, WHITE)
-            self.draw_text("Score: " + str(self.score), WIDTH / 2, HEIGHT / 2, 22, WHITE)
+            self.draw_text("GAME OVER", WIDTH / 2, HEIGHT / 4, 48, BLACK)
+            self.draw_text("Score: " + str(self.score), WIDTH / 2, HEIGHT / 2, 22, BLACK)
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self.time_to_submit_to_the_database = False
-                    if self.playing == True:
+                    if self.playing:
                         self.playing = False
                     self.running = False
 
                 self.input_box.events(event)
                 self.input_box.update()
                 self.input_box.draw(self.screen)
-                pg.display.flip()
+                # self.input_box.text = ""
+                display.flip()
                 if self.input_box.isSubmitted:
-                    # do stuff
-                    self.azure.pushData(self.input_box.username,self.score)
+                    self.db.add_score(self.input_box.username, self.score)
                     self.time_to_submit_to_the_database = False
                     break
 
@@ -248,7 +235,7 @@ class Game:
 game = Game()
 game.show_start_screen()
 while game.running:
-    game.new()
+    game.run()
     game.show_game_over_screen()
 
 pg.quit()
